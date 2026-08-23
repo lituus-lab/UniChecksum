@@ -31,7 +31,7 @@ task docs, "API reference + book into pages/ — what CI publishes":
   # The book is the landing page; the generated reference sits under api/.
   cpFile "book/index.html", "pages/index.html"
 
-const testFiles = @["test_crc32"]
+const testFiles = @["test_crc32", "test_crc64"]
 
 proc runTests(release: bool) =
   let flags = if release: " -d:release" else: ""

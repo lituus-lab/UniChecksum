@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 lituus-lab
+# Rules for `markdownlint` (pre-commit). Defaults apply except below.
+
+# Prose wraps at 80; tables and fenced blocks carry paths, commands and
+# reference values that cannot wrap without becoming unreadable.
+MD013:
+  line_length: 80
+  tables: false
+  code_blocks: false
+
+# The family writes compact separator rows (|---|---|). Restyling every table
+# to "| --- |" would churn every repo for no reader-visible gain.
+MD060: false

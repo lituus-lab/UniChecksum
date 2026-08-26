@@ -4,7 +4,7 @@
 ## Keep in sync with include/UniChecksum.h; tests/c links the header against this lib.
 import ../UniChecksum
 
-const UniChecksumVersionC: cstring = "0.1.0"
+const UniChecksumVersionC: cstring = "0.2.0"
 
 template foldSpan(state, data, length, updater: untyped): untyped =
   ## Never raises: a null pointer, an empty span, or a length no `int` can
@@ -22,21 +22,40 @@ template foldSpan(state, data, length, updater: untyped): untyped =
 # extension is the one consumer that links the static build. The static-library
 # tasks pass -d:staticNoAutoInit; shared builds must not, or NimMain runs twice.
 when defined(staticNoAutoInit):
-  # A C static, not a Nim global: module initialization would reset a Nim one
-  # back to false and NimMain would run again on the next call. NimMain is
-  # declared here too — the generated prototype comes after this section.
+  # A once primitive, not a plain flag: two threads reaching an entry point
+  # together would both see the flag unset, both call NimMain, and the second
+  # would enter Nim code the first had not finished initializing. The platform
+  # primitives block the losers until the winner returns, which a flag cannot.
+  #
+  # C statics, not Nim globals: module initialization would reset a Nim one and
+  # NimMain would run again. NimMain is declared here too — the generated
+  # prototype comes after this section.
   {.emit: """/*VARSECTION*/
 void NimMain(void);
-static int unichecksum_runtime_ready = 0;
+#ifdef _WIN32
+#  include <windows.h>
+static INIT_ONCE unichecksum_runtime_once = INIT_ONCE_STATIC_INIT;
+static BOOL CALLBACK unichecksum_runtime_init(PINIT_ONCE o, PVOID p, PVOID *c) {
+  (void)o; (void)p; (void)c; NimMain(); return TRUE;
+}
+static void unichecksum_runtime_ensure(void) {
+  InitOnceExecuteOnce(&unichecksum_runtime_once, unichecksum_runtime_init, NULL, NULL);
+}
+#else
+#  include <pthread.h>
+static pthread_once_t unichecksum_runtime_once = PTHREAD_ONCE_INIT;
+static void unichecksum_runtime_init(void) { NimMain(); }
+static void unichecksum_runtime_ensure(void) {
+  pthread_once(&unichecksum_runtime_once, unichecksum_runtime_init);
+}
+#endif
 """.}
   template ensureRuntime() =
-    {.emit: """
-  if (!unichecksum_runtime_ready) { unichecksum_runtime_ready = 1; NimMain(); }
-""".}
+    {.emit: "  unichecksum_runtime_ensure();".}
 else:
   template ensureRuntime() = discard
 
-{.push exportc, cdecl, dynlib.}
+{.push exportc, cdecl, dynlib, raises: [].}
 
 proc unichecksum_crc32_init(): uint32 =
   ensureRuntime()

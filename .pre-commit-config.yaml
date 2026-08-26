@@ -42,17 +42,24 @@ repos:
     hooks:
       - id: nim-lint
         name: nimble lint (nimpretty)
-        entry: nimble lint
+        entry: tools/hooks/gated.sh lint
         language: system
         files: \.nim$
         pass_filenames: false
       - id: nim-vgraph
         name: nimble checkVGraph
-        entry: nimble checkVGraph
+        entry: tools/hooks/gated.sh checkVGraph
         language: system
         files: \.nim$
         pass_filenames: false
         stages: [pre-push]
+      - id: actionlint
+        name: actionlint (GitHub workflows)
+        entry: actionlint
+        language: golang
+        additional_dependencies: [github.com/rhysd/actionlint/cmd/actionlint@v1.7.7]
+        files: ^\.github/workflows/.*\.ya?ml$
+
       - id: spdx
         name: SPDX headers (nim/C/Python)
         entry: tools/hooks/spdx_check.sh

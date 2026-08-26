@@ -2,7 +2,7 @@
 # Copyright 2026 lituus-lab
 # UniChecksum — CRC-32, CRC-64/XZ and Adler-32 checksums.
 
-version       = "0.1.0"
+version       = "0.2.0"
 author        = "lituus-lab"
 description   = "CRC-32, CRC-64/XZ and Adler-32 checksums (Nim + C ABI + Python)"
 license       = "Apache-2.0"

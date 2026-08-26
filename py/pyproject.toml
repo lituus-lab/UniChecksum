@@ -5,8 +5,11 @@ requires = ["setuptools>=77.0.0", "wheel", "Cython>=3.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "unichecksum"
-version = "0.1.0"
+# The distribution is namespaced, the import name is not: `pip install
+# lituus-unichecksum` then `import unichecksum`. Two decisions, and the bare
+# names are not all available on PyPI.
+name = "lituus-unichecksum"
+version = "0.2.0"
 description = "Python binding for the UniChecksum C library"
 readme = "README.md"
 requires-python = ">=3.10"

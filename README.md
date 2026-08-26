@@ -5,10 +5,15 @@
 CRC-32, CRC-64/XZ and Adler-32 — the error-detecting codes container formats
 carry — in Nim, with a hand-written C ABI and a Cython Python binding.
 
-Layer-1 in the `lituus-lab` `Uni*` family DAG: it depends on no sibling, so the
-formats that need a checksum can depend on it without closing a cycle. These
-are not cryptographic hashes: they catch accidental corruption, and an attacker
-who can rewrite the data can rewrite the checksum to match.
+It depends on no other library of the family, so the formats that need a
+checksum can depend on it without closing a cycle — `vgraph.cfg` declares an
+empty `[engines]` list and `checkVGraph` fails the build if a `requires` line
+ever names a sibling. These are not cryptographic hashes: they catch accidental
+corruption, and an attacker who can rewrite the data can rewrite the checksum
+to match.
+
+**Status: incubating.** The three algorithms are fixed by their
+specifications and will not change; the `0.x` C ABI is not frozen.
 
 ## Quick start
 
@@ -56,7 +61,8 @@ allocates, and nothing here raises outside a debug-build contract violation.
 
 ## The Uni* family
 
-UniChecksum is layer 1 of `lituus-lab`'s `Uni*` family: a set of Nim libraries,
+UniChecksum sits at the bottom of `lituus-lab`'s `Uni*` family: a set of Nim
+libraries,
 each with a C ABI and a Python binding, unified by a shared dependency DAG and
 documentation/testing conventions. See
 [lituus-lab/.github](https://github.com/lituus-lab/.github) for the family's
@@ -94,32 +100,61 @@ tests/c/                     C ABI test (links the header against the lib)
 examples/                    Nim + C demos
 py/                          Cython binding + pytest
 ADRs/                        0001 no sibling deps, 0002 license, 0003 C ABI & Python, 0004 checksum families
-.github/workflows/ci.yml     3-OS Nim matrix + C ABI + Python
+tools/gate.nim               the failure gate (see "Running a task")
+tests/canary_broken.nim      does not compile, on purpose
+tests/test_version.nim       the version's seven copies must agree
+.github/workflows/ci.yml     calls the family's shared workflow
+CHANGELOG.md CITATION.cff CODE_OF_CONDUCT.md .editorconfig
 ```
 
 ## Build
 
 ```bash
 nimble install -y
-nimble test           # Nim, debug (contracts active)
-nimble testRelease    # Nim, release (contracts compiled away)
-nimble testAll        # debug + release + C ABI
-nimble ctest          # C ABI: static lib + tests/c
-nimble cexample       # C demo
-nimble example        # Nim demo
-nimble pyTest         # Cython + pytest
-nimble lint           # nimpretty check
-nimble checkVGraph    # import-direction check
-nimble coverage       # gcov + lcov -> coverage/
-nimble book           # nimib book -> book/index.html
-nimble docs           # book + API reference -> pages/
+nim c --hints:off -o:build/unigate tools/gate.nim   # the failure gate, once
+
+build/unigate test           # Nim, debug (contracts active)
+build/unigate testRelease    # Nim, release (contracts compiled away)
+build/unigate testAll        # debug + release + C ABI
+build/unigate ctest          # C ABI: static lib + tests/c
+build/unigate cexample       # C demo
+build/unigate example        # Nim demo
+build/unigate pyTest         # Cython + pytest
+build/unigate lint           # nimpretty check
+build/unigate checkVGraph    # import-direction check
+build/unigate coverage       # gcov + lcov -> coverage/, fails below 90%
+build/unigate book           # nimib book -> book/index.html
+build/unigate docs           # book + API reference -> pages/
+build/unigate canary         # must fail: proves the gate still works
 ```
+
+## Running a task
+
+Nimble 0.22 exits 0 even when an `exec` inside a task failed: the exception is
+printed, the task stops, and the process still reports success. `nimble test`
+coming back 0 therefore proves only that nimble ran. Every task here ends by
+writing its own success marker, and `tools/gate.nim` is what turns a missing
+marker into a non-zero exit.
+
+Run tasks through `build/unigate`, never bare, wherever the answer matters.
+`build/unigate canary` compiles a source that cannot compile and must come back
+non-zero; a CI job checks exactly that, because a gate nobody tests is a gate
+nobody can trust.
 
 ## CI
 
+The jobs live in
+[lituus-lab/.github](https://github.com/lituus-lab/.github/blob/main/.github/workflows/uni-nim-library.yml),
+shared by the family and called from here with this repo's name; `ci.yml` is
+the call.
+
 `test`, `cabi` and `python` on ubuntu/macOS/Windows. `consume-cabi` and
 `consume-wheel` rebuild against the published artifacts on a machine without Nim,
-so what ships is what was tested. `coverage` and `docs` run on ubuntu.
+so what ships is what was tested. `coverage` and `docs` run on ubuntu. `canary`
+checks that the gate still rejects a broken build.
+
+`all-green` gathers every job's result and is the single check branch protection
+requires: a job that was skipped or cancelled cannot pass for one that ran.
 
 `dco` blocks PRs missing a `Signed-off-by` trailer; `commitizen` blocks PRs whose
 commits or title are not [Conventional Commits](https://www.conventionalcommits.org/)
@@ -129,8 +164,10 @@ The same gates run locally with pre-commit:
 `pip install pre-commit && pre-commit install`
 (`CONTRIBUTING.md`).
 
-`docs` publishes to GitHub Pages — skipped on push to a fork or while the repo
-is private, on by default once public on `main`.
+`pages` deploys the built docs, and is opt-in through the `PUBLISH_PAGES`
+repository variable. It is off by default: across the family today every one of
+these deployments reports success while every site answers 404, and a job that
+is red forever teaches everyone to ignore red.
 
 ## AI-assisted contributions
 
@@ -144,7 +181,7 @@ contribution.
 - **No third-party contamination.** Ensure AI output introduces no code from a
   third party without a compatible license and attribution. If an LLM reproduced
   protected material, do not submit it.
-- **Correctness is yours.** The gates (tests, `nimble lint`, conventional commits,
+- **Correctness is yours.** The gates (tests, `lint`, conventional commits,
   pre-commit) catch a lot, but you own the result — review and verify what you
   commit.
 - **Atomic commits.** Each commit is one logical change. A PR may stack

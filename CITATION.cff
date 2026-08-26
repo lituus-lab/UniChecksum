@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 lituus-lab
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: UniChecksum
+abstract: >-
+  CRC-32 (IEEE 802.3), CRC-64/XZ (ECMA-182) and Adler-32 (RFC 1950) in Nim,
+  with a C ABI and a Python binding: the error-detecting codes container
+  formats mandate, checked against the published check values.
+type: software
+authors:
+  - family-names: Bartoletti
+    given-names: Loïc
+    email: lbartoletti@lituus-lab.com
+    affiliation: lituus-lab
+repository-code: "https://github.com/lituus-lab/UniChecksum"
+license: Apache-2.0
+version: 0.2.0
+keywords:
+  - checksum
+  - crc32
+  - crc64
+  - adler32
+  - nim

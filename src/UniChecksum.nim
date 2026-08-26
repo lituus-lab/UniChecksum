@@ -6,4 +6,4 @@ import UniChecksum/crc32
 import UniChecksum/crc64
 export adler32, crc32, crc64
 
-const UniChecksumVersion* = "0.1.0"
+const UniChecksumVersion* = "0.2.0"

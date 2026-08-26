@@ -4,8 +4,10 @@ import std/unittest
 import UniChecksum
 
 suite "umbrella API":
-  test "the version constant matches the package":
-    check UniChecksumVersion == "0.1.0"
+  test "the version constant is stated at all":
+    # That it agrees with the manifest, the header and the wheel is
+    # tests/test_version.nim's job; a literal here would break on every bump.
+    check UniChecksumVersion.len > 0
 
   test "the string and byte-span overloads agree":
     let text = "UniChecksum"

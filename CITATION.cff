@@ -15,7 +15,7 @@ authors:
     affiliation: lituus-lab
 repository-code: "https://github.com/lituus-lab/UniChecksum"
 license: Apache-2.0
-version: 0.2.0
+version: 0.1.0
 keywords:
   - checksum
   - crc32

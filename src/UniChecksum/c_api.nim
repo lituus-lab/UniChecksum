@@ -4,7 +4,7 @@
 ## Keep in sync with include/UniChecksum.h; tests/c links the header against this lib.
 import ../UniChecksum
 
-const UniChecksumVersionC: cstring = "0.2.0"
+const UniChecksumVersionC: cstring = "0.1.0"
 
 template foldSpan(state, data, length, updater: untyped): untyped =
   ## Never raises: a null pointer, an empty span, or a length no `int` can

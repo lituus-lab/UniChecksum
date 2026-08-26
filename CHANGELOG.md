@@ -9,9 +9,15 @@ Notable changes, newest first. Format after
 The C ABI has its own compatibility: a symbol removed or retyped is a major
 change, whatever the Nim API did.
 
-## [0.2.0]
+## [0.1.0]
 
-No checksum changes a value. Everything here is about being able to tell.
+First release. Nothing here has ever been published: no tag, no GitHub
+release, no wheel. The version marks the first time the whole chain is
+exercised end to end, not a second iteration on a first one.
+
+CRC-32 (IEEE 802.3), CRC-64/XZ (ECMA-182) and Adler-32 (RFC 1950), one-shot
+and streaming, in Nim, C and Python. Checked against the check values those
+specifications publish, with CPython's `zlib` as an independent oracle.
 
 ### Added
 
@@ -44,7 +50,3 @@ No checksum changes a value. Everything here is about being able to tell.
 - The Nim and Python suites asserted the version as a literal, so a bump broke
   them. They check that one exists; agreement is `test_version.nim`'s job.
 
-## [0.1.0]
-
-First release: CRC-32, CRC-64/XZ and Adler-32, one-shot and streaming, in Nim,
-C and Python.

@@ -21,10 +21,11 @@ CELLS = [
 
 `unichecksum` is a Cython extension over the UniChecksum C ABI, shipped as a
 self-contained wheel: the native library travels inside the package, so
-installing it needs neither Nim nor a compiler.
+installing it needs neither Nim nor a compiler. The distribution is
+`lituus-unichecksum`; the import name is not namespaced.
 
 ```
-pip install unichecksum
+pip install lituus-unichecksum
 ```
 
 CI executes this notebook against the wheel the release actually publishes, so

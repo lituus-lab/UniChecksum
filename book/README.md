@@ -28,6 +28,12 @@ build/unigate book     # the book alone
 build/unigate docs     # book + generated API reference, into pages/
 ```
 
+`book` builds what the chapters are going to run — the C static library and
+the Python extension — and runs nimibook's `init` before `build`. `init` is
+what creates `__site/assets`, which is not tracked: without it every page
+ships referencing a stylesheet and a script that are not there, and nothing
+says so until someone opens the site.
+
 Through the gate, never `nimble book` directly: nimble exits 0 even when an
 `exec` inside a task fails, so a green run that went through it proves nothing.
 
@@ -36,12 +42,8 @@ Through the gate, never `nimble book` directly: nimble exits 0 even when an
 Add the entry to `nbook.nim`'s table of contents, then:
 
 ```bash
-nimble bookInit        # scaffolds the missing source, and the assets directory
+nimble bookInit        # scaffolds the missing source
 ```
-
-It is a separate task on purpose — `book` must not rewrite scaffolding on
-every run. Without the assets directory the pages render with no stylesheet at
-all: they reference `./assets/`, and nothing says so until the site is opened.
 
 Each chapter calls `nbInit(theme = useNimibook)` itself and then `useLituus()`.
 `nbInit` cannot be wrapped: it reads `instantiationInfo(-1)` to learn which

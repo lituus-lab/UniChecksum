@@ -44,7 +44,6 @@ task canary, "Must fail: proves the gate still catches a broken build":
   # No `done` here on purpose. If this task ever passes the gate, the gate has
   # stopped working and every other green result is worthless.
   exec "nim c -r --hints:off --path:src -o:build/canary tests/canary_broken.nim"
-  done "canary"
 
 task lint, "Fail if nimpretty would reformat a source":
   exec "nim c -r --hints:off -o:build/lint_tool tools/lint.nim"

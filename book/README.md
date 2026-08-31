@@ -2,6 +2,48 @@
 <!-- Copyright 2026 lituus-lab -->
 # The Book
 
-`index.nim` is a nimib page: its Nim blocks are compiled and run when the book
-is built, so every output shown is what the code produced. Build it with
-`nimble book`, or `nimble docs` to render it alongside the API reference.
+A nimibook table of contents, one chapter per file. Every code block is
+compiled and run when the book is built, so prose that outlives its API breaks
+the build rather than quietly misleading a reader.
+
+| File | What it is |
+|---|---|
+| `nbook.nim` | the table of contents and the theme selection — the driver |
+| `nimib.toml` | nimib's own configuration, read from this directory |
+| `config.nims` | the paths each chapter's own compilation needs |
+| `index.nim` | the three families, and what the empty span gives |
+| `streaming.nim` | `Init` / `Update` / `Final`, and resuming from a result |
+| `detection.nim` | what each one detects, and what Adler-32 gives up for it |
+| `surfaces.nim` | the C ABI and the Python binding, both run for real |
+
+`surfaces_demo.c` and `surfaces_demo.py` are compiled and run by
+`surfaces.nim`; their output is the page's. They are files rather than
+command-line snippets because both need quote characters, and nesting those
+through Nim and then the shell is how a block ends up green and wrong.
+
+## Building it
+
+```bash
+build/unigate book     # the book alone
+build/unigate docs     # book + generated API reference, into pages/
+```
+
+Through the gate, never `nimble book` directly: nimble exits 0 even when an
+`exec` inside a task fails, so a green run that went through it proves nothing.
+
+## Adding a chapter
+
+Add the entry to `nbook.nim`'s table of contents, then:
+
+```bash
+nimble bookInit        # scaffolds the missing source, and the assets directory
+```
+
+It is a separate task on purpose — `book` must not rewrite scaffolding on
+every run. Without the assets directory the pages render with no stylesheet at
+all: they reference `./assets/`, and nothing says so until the site is opened.
+
+Each chapter calls `nbInit(theme = useNimibook)` itself and then `useLituus()`.
+`nbInit` cannot be wrapped: it reads `instantiationInfo(-1)` to learn which
+file it is documenting, so a template calling it from another module makes
+every chapter claim to be that module, and nimibook then writes no HTML at all.

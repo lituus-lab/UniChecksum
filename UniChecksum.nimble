@@ -54,21 +54,60 @@ task checkVGraph, "Fail on an import that climbs the layers in vgraph.cfg":
   exec "nim c -r --hints:off -o:build/vgraph_tool tools/vgraph.nim"
   done "checkVGraph"
 
-task docsDeps, "Install the docs toolchain (nimib)":
-  exec "nimble install -y nimib"
+# From the URL with a tag, not from the registry: the nimble registry lags
+# upstream, and `nimble install nimibook` resolves 0.3.1, whose themes.nim does
+# not compile against nimib 0.4.x. The theme is pinned for a different reason --
+# several installs of one version is a resolution nimble cannot make, and it
+# picks between them in silence.
+const bookDeps = [
+  "https://github.com/pietroppeter/nimib#v0.4.1",
+  "https://github.com/pietroppeter/nimibook#v0.4.0",
+  "https://github.com/lituus-lab/lituus-theme#v0.2.0",
+]
+taskRequires "docsDeps", bookDeps[0], bookDeps[1], bookDeps[2]
+
+task docsDeps, "Install the docs toolchain (nimib + nimibook + theme)":
+  # This task's own `taskRequires` above is what fetches them: nimble resolves
+  # and installs a task's requirements before running its body.
+  echo "nimib, nimibook and lituus-theme installed."
   done "docsDeps"
 
-task book, "Build the nimib book (needs nimib)":
-  # nimib compiles and runs the book's code blocks: a drift fails the build.
-  exec "nim c -r --path:src --hints:off -o:build/book book/index.nim"
+task bookInit, "Scaffold a chapter added to the table of contents":
+  # Only when an entry is added: it creates the missing source and, if there is
+  # none, a nimib.toml. Not part of `book`, which must not rewrite scaffolding
+  # on every run.
+  withDir "book":
+    exec "nim c -r --hints:off -o:../build/nbook nbook.nim init"
+  done "bookInit"
+
+task book, "Build the multi-chapter book (needs nimib + nimibook)":
+  # Run from book/, because nimibook reads the nimib.toml of the directory it
+  # starts in -- run from the root, `init` writes a second one there that masks
+  # the book's own. Each chapter is compiled and run as its own program, so a
+  # drift in any of them fails the build; book/config.nims is what gives those
+  # processes their paths.
+  withDir "book":
+    exec "nim c -r --hints:off -o:../build/nbook nbook.nim clean"
+    exec "nim c -r --hints:off -o:../build/nbook nbook.nim build"
   done "book"
 
 task docs, "API reference + book into pages/ — what CI publishes":
   rmDir "pages"
-  exec "nim doc --index:on --outdir:pages/api --project --hints:off src/UniChecksum.nim"
   exec gate("book")
-  # The book is the landing page; the generated reference sits under api/.
-  cpFile "book/index.html", "pages/index.html"
+  # The book *is* the site: its pages link to `assets/` and to each other as
+  # siblings, so it is copied whole to the root rather than nested and then
+  # copied again. Lifting one page out of it breaks every relative link on it.
+  cpDir "book/__site", "pages"
+  # book.json is nimibook's build state -- no page fetches it -- and it carries
+  # the absolute path of the machine that built it. It does not get published.
+  rmFile "pages/book.json"
+  # The generated reference sits beside the book, not inside it.
+  exec "nim doc --index:on --outdir:pages/api --project --hints:off src/UniChecksum.nim"
+  # ...and wears the same theme. `nim doc` has no stylesheet option, so the
+  # palette is appended to the one it just wrote. Left alone, that reference
+  # ships six tokens below their contrast bar.
+  exec "nim c -r --hints:off --outdir:build tools/theme_api.nim " &
+       "pages/api/nimdoc.out.css"
   done "docs"
 
 const testFiles = @["test_crc32", "test_crc64", "test_adler32", "test_api",

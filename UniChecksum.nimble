@@ -205,7 +205,7 @@ task cexample, "C demo":
 const pythonExe = when defined(windows): "python" else: "python3"
 
 task pyDeps, "Install Python build deps (setuptools, Cython, pytest) if missing":
-  exec pythonExe & " -m pip install --break-system-packages --quiet setuptools wheel \"Cython>=3.0.0\" pytest"
+  exec pythonExe & " -m pip install --break-system-packages --quiet --upgrade \"setuptools>=77\" wheel \"Cython>=3.0.0\" pytest"
   done "pyDeps"
 
 # The extension links the vcc static lib on Windows, the shared lib elsewhere.
@@ -259,7 +259,11 @@ task coverage, "LCOV + HTML coverage report for the Nim sources (needs lcov)":
   exec "lcov --capture --directory " & cache & " --base-directory ." &
        " --include \"*/src/UniChecksum/*\" --ignore-errors mismatch" &
        " --output-file lcov.info --quiet"
-  exec "genhtml lcov.info --output-directory coverage --legend --quiet"
+  # gcov can attribute a final generated expression to EOF + 1; `range` is
+  # genhtml's documented filter for precisely that compiler artifact, and
+  # lcov 2.x wants the matching category allowance before it applies it.
+  exec "genhtml lcov.info --filter range --ignore-errors range" &
+       " --output-directory coverage --legend --quiet"
 
   # A threshold, not a report: coverage that is measured and printed but never
   # opposable is a number nobody has to answer for. The summary is read rather

@@ -46,6 +46,10 @@ coverage on ubuntu; a canary job that must fail; `all-green` over all of them.
 - C ABI: hand-written `include/UniChecksum.h` kept in sync with
   `src/UniChecksum/c_api.nim`; `tests/c` links the header against the lib.
   Built `--app:staticlib`/`--app:lib --noMain --mm:arc -d:release`.
+- A change to `c_api.nim` is verified by `ctest`, `pyTest` and, where there
+  is one, `wasmTest`: three linkages, three runtime bootstraps. A green
+  `ctest` alone proved nothing the day the shared build lost its
+  initializer and every registry answered with the sentinel.
 - C symbols `unichecksum_*` (prefix `unichecksum_`, not a short form); lib
   `libUniChecksum`; header `UniChecksum.h`.
 - A checksum change is only trustworthy against an outside reference: the Nim

@@ -9,6 +9,7 @@ set -eu
 cd "$(git rev-parse --show-toplevel)"
 
 gate=build/unigate
+[ "${OS:-}" = Windows_NT ] && gate=build/unigate.exe
 [ -x "$gate" ] || nim c --hints:off -o:"$gate" tools/gate.nim >/dev/null
 
 exec "$gate" "$@"
